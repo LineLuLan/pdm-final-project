@@ -146,5 +146,3 @@ src/frontend/
    - Thêm error tracking
    - Thêm performance monitoring
 
----
-**File này giúp AI hoặc dev mới đọc vào là hiểu rõ cấu trúc, công nghệ, và các thành phần chính của hệ thống.**
