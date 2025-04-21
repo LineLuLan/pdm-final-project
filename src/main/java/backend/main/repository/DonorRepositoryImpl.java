@@ -52,13 +52,32 @@ public class DonorRepositoryImpl implements DonorRepository {
 
     @Override
     public int save(Donor donor) {
-        String sql = "INSERT INTO Donor (name, gender, age, bloodType, weight, " +
-                     "lastDonationDate, healthStatus, isEligible, registrationDate) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Donor (name, gender, age, bloodType, weight, lastDonationDate, healthStatus, isEligible, registrationDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
             setDonorParameters(stmt, donor);
-            return stmt.executeUpdate();  // Returns number of rows affected
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows == 1) {
+                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        int id = generatedKeys.getInt(1);
+                        System.out.println("[DEBUG] generatedKeys.getInt(1): " + id);
+                        try {
+                            String colName = generatedKeys.getMetaData().getColumnName(1);
+                            System.out.println("[DEBUG] generatedKeys column name: " + colName);
+                        } catch (Exception metaEx) {
+                            System.err.println("[DEBUG] Could not get column name from generatedKeys: " + metaEx.getMessage());
+                        }
+                        donor.setDonorId(id);
+                        System.out.println("[DEBUG] Inserted Donor with ID: " + id);
+                    } else {
+                        System.err.println("[ERROR] No donorId returned after insert! generatedKeys empty.");
+                    }
+                }
+            } else {
+                System.err.println("[ERROR] Insert donor failed, no rows affected!");
+            }
+            return affectedRows;
         } catch (SQLException e) {
             e.printStackTrace();
             return 0;
@@ -129,6 +148,26 @@ public class DonorRepositoryImpl implements DonorRepository {
     }
 
     // Helper method to map ResultSet to Donor object
+    @Override
+    public List<Donor> findByIdentity(String name, String bloodType, Integer age, String gender) {
+        List<Donor> list = new ArrayList<>();
+        String sql = "SELECT * FROM Donor WHERE name = ? AND bloodType = ? AND age = ? AND gender = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, name);
+            stmt.setString(2, bloodType);
+            stmt.setInt(3, age);
+            stmt.setString(4, gender);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                list.add(mapRowToDonor(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     private Donor mapRowToDonor(ResultSet rs) throws SQLException {
         Donor donor = new Donor();
         donor.setDonorId(rs.getInt("donorId"));
@@ -161,7 +200,15 @@ public class DonorRepositoryImpl implements DonorRepository {
             Date.valueOf(donor.getLastDonationDate()) : null);
         stmt.setString(7, donor.getHealthStatus());
         stmt.setBoolean(8, donor.getIsEligible());
-        stmt.setTimestamp(9, donor.getRegistrationDate() != null ? 
-            Timestamp.valueOf(donor.getRegistrationDate()) : null);
+        // Xử lý registrationDate: nếu truyền lên là String có thể không đúng định dạng, cần kiểm tra kỹ
+        try {
+            if (donor.getRegistrationDate() != null) {
+                stmt.setTimestamp(9, Timestamp.valueOf(donor.getRegistrationDate()));
+            } else {
+                stmt.setTimestamp(9, new Timestamp(System.currentTimeMillis()));
+            }
+        } catch (Exception e) {
+            stmt.setTimestamp(9, new Timestamp(System.currentTimeMillis()));
+        }
     }
 }

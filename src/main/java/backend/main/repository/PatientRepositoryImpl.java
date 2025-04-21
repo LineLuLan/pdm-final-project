@@ -15,6 +15,42 @@ import org.springframework.stereotype.Repository;
 public class PatientRepositoryImpl implements PatientRepository {
 
     @Override
+    public Optional<Patient> findByPhone(String phone) {
+        String sql = "SELECT p.* FROM Patient p JOIN PatientPhone pp ON p.Pid = pp.pid WHERE pp.phone = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, phone);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return Optional.of(mapRowToPatient(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public List<Patient> findByIdentity(String name, String bloodType, Integer age, String gender) {
+        List<Patient> list = new ArrayList<>();
+        String sql = "SELECT * FROM Patient WHERE Name = ? AND BloodType = ? AND Age = ? AND Gender = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, name);
+            stmt.setString(2, bloodType);
+            stmt.setInt(3, age);
+            stmt.setString(4, gender);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                list.add(mapRowToPatient(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    @Override
     public Optional<Patient> findById(Integer patientId) {
         String sql = "SELECT * FROM Patient WHERE Pid = ?";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -50,13 +86,21 @@ public class PatientRepositoryImpl implements PatientRepository {
     public int save(Patient patient) {
         String sql = "INSERT INTO Patient (Name, BloodType, Age, Gender, MedicalHistory) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, patient.getName());
             stmt.setString(2, patient.getBloodType());
             stmt.setInt(3, patient.getAge());
             stmt.setString(4, patient.getGender());
             stmt.setString(5, patient.getMedicalHistory());
-            return stmt.executeUpdate();
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows > 0) {
+                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        patient.setPid(generatedKeys.getInt(1));
+                    }
+                }
+            }
+            return affectedRows;
         } catch (SQLException e) {
             e.printStackTrace();
             return 0;

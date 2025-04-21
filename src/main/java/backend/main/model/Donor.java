@@ -19,6 +19,7 @@ public class Donor {
     private Double weight;
     private LocalDate lastDonationDate;
     private String healthStatus;
-    private Boolean isEligible;
+    private Boolean isEligible = true;
     private LocalDateTime registrationDate;
+    private String phone;
 }

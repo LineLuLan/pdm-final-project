@@ -40,9 +40,20 @@ public class DonorController {
         return ResponseEntity.ok(donors);
     }
 
+    // DTO for donor + phone
+    static class DonorWithPhoneDTO {
+        public Donor donor;
+        public String phone;
+    }
+
     @PostMapping
-    public ResponseEntity<Donor> addDonor(@RequestBody Donor donor) {
-        Donor savedDonor = donorService.addDonor(donor);
+    public ResponseEntity<Donor> addDonor(@RequestBody DonorWithPhoneDTO donorWithPhone) {
+        if (donorWithPhone.phone == null || donorWithPhone.phone.trim().isEmpty()) {
+            throw new RuntimeException("Số điện thoại không được để trống!");
+        }
+        // Gán phone vào donor trước khi lưu
+        donorWithPhone.donor.setPhone(donorWithPhone.phone);
+        Donor savedDonor = donorService.addDonor(donorWithPhone.donor);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedDonor);
     }
 

@@ -12,37 +12,40 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import backend.main.model.PatientPhones;
-import backend.main.repository.PatientPhonesRepository;
+import backend.main.model.PatientPhone;
+import backend.main.repository.PatientPhoneRepository;
 
 @RestController
 @RequestMapping("/patientPhones")
 public class PatientPhonesController {
 
-    private final PatientPhonesRepository patientPhonesRepository;
+    @GetMapping
+    public List<PatientPhone> getAllPatientPhones() {
+        return patientPhoneRepository.getAllPatientPhones();
+    }
+
+    private final PatientPhoneRepository patientPhoneRepository;
 
     @Autowired
-    public PatientPhonesController(PatientPhonesRepository patientPhonesRepository) {
-        this.patientPhonesRepository = patientPhonesRepository;
+    public PatientPhonesController(PatientPhoneRepository patientPhoneRepository) {
+        this.patientPhoneRepository = patientPhoneRepository;
     }
 
     @GetMapping("/{patientId}")
-    public List<PatientPhones> getPatientPhonesByPatientId(@PathVariable Integer patientId) {
-        return patientPhonesRepository.getPatientPhonesByPatientId(patientId);
+    public List<PatientPhone> getPatientPhonesByPatientId(@PathVariable Integer patientId) {
+        return patientPhoneRepository.findByPatientId(patientId);
     }
 
     @PostMapping
-    public void addPatientPhone(@RequestBody PatientPhones patientPhones) {
-        patientPhonesRepository.addPatientPhone(patientPhones);
+    public void addPatientPhone(@RequestBody PatientPhone patientPhone) {
+        patientPhoneRepository.save(patientPhone);
     }
 
     @PutMapping
-    public void updatePatientPhone(@RequestBody PatientPhones patientPhones) {
-        patientPhonesRepository.updatePatientPhone(patientPhones);
-    }
+    // No update method implemented for PatientPhone
 
     @DeleteMapping("/{patientId}/{phone}")
     public void deletePatientPhone(@PathVariable Integer patientId, @PathVariable String phone) {
-        patientPhonesRepository.deletePatientPhone(patientId, phone);
+        // Implement if needed
     }
 }

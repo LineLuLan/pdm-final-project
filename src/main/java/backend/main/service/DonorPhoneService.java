@@ -9,6 +9,9 @@ import java.util.List;
 
 @Service
 public class DonorPhoneService {
+    public List<DonorPhone> getAllDonorPhones() {
+        return donorPhoneRepository.getAllDonorPhones();
+    }
     private final DonorPhoneRepository donorPhoneRepository;
 
     @Autowired
@@ -20,7 +23,21 @@ public class DonorPhoneService {
         return donorPhoneRepository.findByDonorId(donorId);
     }
 
-    public void addDonorPhone(DonorPhone donorPhone) {
+    public void addDonorPhone(DonorPhone donorPhone, String donorName) {
+    if (donorPhone.getPhone() == null || donorPhone.getPhone().trim().isEmpty()) {
+        throw new RuntimeException("Số điện thoại không được để trống!");
+    }
+    // Nếu vừa trùng tên vừa trùng phone thì không cho phép
+    if (donorPhoneRepository.existsByPhoneAndName(donorPhone.getPhone(), donorName)) {
+        throw new RuntimeException("Đã tồn tại donor với cùng tên và số điện thoại này!");
+    }
+
+        // Check duplicate: donorId + phone
+        List<DonorPhone> existing = donorPhoneRepository.findByDonorId(donorPhone.getDonorId());
+        boolean duplicate = existing.stream().anyMatch(dp -> dp.getPhone().equals(donorPhone.getPhone()));
+        if (duplicate) {
+            throw new RuntimeException("Donor phone already exists for this donor!");
+        }
         donorPhoneRepository.save(donorPhone);
     }
 

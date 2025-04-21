@@ -4,6 +4,7 @@ import backend.main.exception.ResourceNotFoundException;
 import backend.main.model.Donor;
 import backend.main.repository.DonorRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -11,9 +12,11 @@ import java.util.List;
 public class DonorService {
     
     private final DonorRepository donorRepository;
+    private final backend.main.service.DonorPhoneService donorPhoneService;
 
-    public DonorService(DonorRepository donorRepository) {
+    public DonorService(DonorRepository donorRepository, backend.main.service.DonorPhoneService donorPhoneService) {
         this.donorRepository = donorRepository;
+        this.donorPhoneService = donorPhoneService;
     }
 
     public Donor getDonorById(Integer donorId) {
@@ -25,8 +28,31 @@ public class DonorService {
         return donorRepository.findAll();
     }
 
+    @Transactional
     public Donor addDonor(Donor donor) {
-        donorRepository.save(donor);
+        System.out.println("[DEBUG] addDonor called with: " + donor);
+        // Tự động set registrationDate nếu chưa có
+        if (donor.getRegistrationDate() == null) {
+            donor.setRegistrationDate(java.time.LocalDateTime.now());
+        }
+        // Kiểm tra trùng lặp donor theo name, bloodType, age, gender
+        var existing = donorRepository.findByIdentity(donor.getName(), donor.getBloodType(), donor.getAge(), donor.getGender());
+        if (!existing.isEmpty()) {
+            throw new RuntimeException("Donor already exists with same name, blood type, age, and gender!");
+        }
+        int result = donorRepository.save(donor);
+        System.out.println("[DEBUG] donorRepository.save result: " + result + ", donorId: " + donor.getDonorId());
+        if (donor.getDonorId() == null) {
+            throw new RuntimeException("[ERROR] donorId is still null after save! Possible DB/config error.");
+        }
+        // Sau khi lưu donor, tự động thêm phone nếu có
+        if (donor.getPhone() != null && !donor.getPhone().trim().isEmpty()) {
+            backend.main.model.DonorPhone donorPhone = new backend.main.model.DonorPhone();
+            donorPhone.setDonorId(donor.getDonorId());
+            donorPhone.setPhone(donor.getPhone());
+            donorPhone.setIsPrimary(true);
+            donorPhoneService.addDonorPhone(donorPhone, donor.getName());
+        }
         return donor;
     }
 

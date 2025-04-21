@@ -17,6 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 import backend.main.model.Patient;
 import backend.main.service.PatientService;
 
+
+// DTO for patient + phone
+class PatientWithPhoneDTO {
+    public Patient patient;
+    public String phone;
+}
+
 @RestController
 @RequestMapping("/patients")
 public class PatientController {
@@ -40,8 +47,8 @@ public class PatientController {
     }
 
     @PostMapping
-    public ResponseEntity<Patient> addPatient(@RequestBody Patient patient) {
-        Patient savedPatient = patientService.addPatient(patient);
+    public ResponseEntity<Patient> addPatient(@RequestBody PatientWithPhoneDTO patientWithPhone) {
+        Patient savedPatient = patientService.addPatient(patientWithPhone.patient, patientWithPhone.phone);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedPatient);
     }
 

@@ -6,6 +6,8 @@ import java.util.Optional;
 import backend.main.model.Donor;
 
 public interface DonorRepository {
+    // Tránh trùng lập donor
+    List<Donor> findByIdentity(String name, String bloodType, Integer age, String gender);
     Optional<Donor> findById(Integer donorId);
     List<Donor> findAll();
     int save(Donor donor);

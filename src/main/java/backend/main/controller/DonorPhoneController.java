@@ -20,13 +20,20 @@ import org.springframework.http.ResponseEntity;
 @RestController
 @RequestMapping("/donorPhones")
 public class DonorPhoneController {
-
     private final DonorPhoneService donorPhoneService;
+    private final backend.main.service.DonorService donorService;
 
     @Autowired
-    public DonorPhoneController(DonorPhoneService donorPhoneService) {
+    public DonorPhoneController(DonorPhoneService donorPhoneService, backend.main.service.DonorService donorService) {
         this.donorPhoneService = donorPhoneService;
+        this.donorService = donorService;
     }
+
+    @GetMapping
+    public ResponseEntity<List<DonorPhone>> getAllDonorPhones() {
+        return ResponseEntity.ok(donorPhoneService.getAllDonorPhones());
+    }
+
 
     @GetMapping("/{donorId}")
     public ResponseEntity<List<DonorPhone>> getDonorPhonesByDonorId(@PathVariable Integer donorId) {
@@ -35,7 +42,16 @@ public class DonorPhoneController {
 
     @PostMapping
     public ResponseEntity<Void> addDonorPhone(@RequestBody DonorPhone donorPhone) {
-        donorPhoneService.addDonorPhone(donorPhone);
+        // Giả sử bạn có thể lấy tên donor từ một service khác dựa vào donorId
+        String donorName = "";
+        // TODO: Lấy tên donor từ donorId
+        // Ví dụ: donorService.getDonorById(donorPhone.getDonorId()).getName();
+        try {
+            donorName = donorService.getDonorById(donorPhone.getDonorId()).getName();
+        } catch (Exception e) {
+            throw new RuntimeException("Không tìm thấy donor với donorId: " + donorPhone.getDonorId());
+        }
+        donorPhoneService.addDonorPhone(donorPhone, donorName);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

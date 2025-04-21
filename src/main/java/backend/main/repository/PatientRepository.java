@@ -13,4 +13,6 @@ public interface PatientRepository {
     int deleteById(Integer patientId);
     List<Patient> findByBloodType(String bloodType);
     List<Patient> findUrgentCases();
+    Optional<Patient> findByPhone(String phone);
+    List<Patient> findByIdentity(String name, String bloodType, Integer age, String gender);
 }
