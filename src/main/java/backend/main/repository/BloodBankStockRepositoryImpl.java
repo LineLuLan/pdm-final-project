@@ -13,6 +13,22 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class BloodBankStockRepositoryImpl implements BloodBankStockRepository {
     @Override
+    public List<BloodBankStock> findAll() {
+        List<BloodBankStock> stocks = new ArrayList<>();
+        String sql = "SELECT * FROM BloodBankStock";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                stocks.add(mapRowToBloodBankStock(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return stocks;
+    }
+
+    @Override
     public List<BloodBankStock> findByBloodBankId(Integer bankId) {
         List<BloodBankStock> stocks = new ArrayList<>();
         String sql = "SELECT * FROM BloodBankStock WHERE bid = ?";

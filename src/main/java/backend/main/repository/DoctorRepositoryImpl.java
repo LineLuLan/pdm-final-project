@@ -38,6 +38,7 @@ public class DoctorRepositoryImpl implements DoctorRepository {
             while (rs.next()) {
                 doctors.add(mapRowToDoctor(rs));
             }
+            System.out.println("[DEBUG] findAll doctors count: " + doctors.size());
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -50,7 +51,9 @@ public class DoctorRepositoryImpl implements DoctorRepository {
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             setDoctorParameters(stmt, doctor, false);
-            return stmt.executeUpdate();
+            int result = stmt.executeUpdate();
+            System.out.println("[DEBUG] Save doctor result: " + result);
+            return result;
         } catch (SQLException e) {
             e.printStackTrace();
             return 0;
@@ -108,6 +111,36 @@ public class DoctorRepositoryImpl implements DoctorRepository {
     }
 
     @Override
+    public Optional<Doctor> findByLicenseNumber(String licenseNumber) {
+        String sql = "SELECT * FROM Doctor WHERE licenseNumber = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, licenseNumber);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return Optional.of(mapRowToDoctor(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
+    public Optional<Doctor> findByEmail(String email) {
+        String sql = "SELECT * FROM Doctor WHERE email = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, email);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return Optional.of(mapRowToDoctor(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
     public List<Doctor> findBySpecialization(String specialization) {
         List<Doctor> doctors = new ArrayList<>();
         String sql = "SELECT * FROM Doctor WHERE specialization = ?";

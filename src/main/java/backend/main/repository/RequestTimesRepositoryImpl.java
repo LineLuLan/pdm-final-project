@@ -12,6 +12,21 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class RequestTimesRepositoryImpl implements RequestTimesRepository {
     @Override
+    public List<RequestTimes> findAll() {
+        List<RequestTimes> list = new ArrayList<>();
+        String sql = "SELECT * FROM RequestTimes";
+        try (Connection conn = DatabaseConfig.getConnection();
+             Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+                list.add(mapRowToRequestTimes(rs));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+    @Override
     public List<RequestTimes> findByPatientId(Integer patientId) {
         List<RequestTimes> list = new ArrayList<>();
         String sql = "SELECT * FROM RequestTimes WHERE patientId = ?";
@@ -29,29 +44,42 @@ public class RequestTimesRepositoryImpl implements RequestTimesRepository {
     }
 
     @Override
-    public int save(RequestTimes request) {
-        String sql = "INSERT INTO RequestTimes (requestId, did, bid, patientId, requestDate, bloodType, quantity, urgency, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, request.getRequestId());
-            stmt.setInt(2, request.getDid());
-            stmt.setInt(3, request.getBid());
-            stmt.setInt(4, request.getPatientId());
-            if (request.getRequestDate() != null) {
-                stmt.setTimestamp(5, java.sql.Timestamp.valueOf(request.getRequestDate()));
-            } else {
-                stmt.setNull(5, Types.TIMESTAMP);
-            }
-            stmt.setString(6, request.getBloodType());
-            stmt.setInt(7, request.getQuantity());
-            stmt.setString(8, request.getUrgency());
-            stmt.setString(9, request.getStatus());
-            return stmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return 0;
-        }
+public int save(RequestTimes request) {
+    boolean hasRequestDate = request.getRequestDate() != null;
+    String sql;
+    if (hasRequestDate) {
+        sql = "INSERT INTO RequestTimes (did, bid, patientId, requestDate, bloodType, quantity, urgency, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+    } else {
+        sql = "INSERT INTO RequestTimes (did, bid, patientId, bloodType, quantity, urgency, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
     }
+    try (Connection conn = DatabaseConfig.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        stmt.setInt(1, request.getDid());
+        stmt.setInt(2, request.getBid());
+        stmt.setInt(3, request.getPatientId());
+        int idx = 4;
+        if (hasRequestDate) {
+            stmt.setTimestamp(idx++, java.sql.Timestamp.valueOf(request.getRequestDate()));
+        }
+        stmt.setString(idx++, request.getBloodType());
+        stmt.setInt(idx++, request.getQuantity());
+        stmt.setString(idx++, request.getUrgency());
+        stmt.setString(idx++, request.getStatus());
+        int affectedRows = stmt.executeUpdate();
+        // Optionally fetch generated keys if needed
+        if (affectedRows > 0) {
+            try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    request.setRequestId(generatedKeys.getInt(1));
+                }
+            }
+        }
+        return affectedRows;
+    } catch (SQLException e) {
+        e.printStackTrace();
+        return 0;
+    }
+}
 
     @Override
     public int deleteByPatientId(Integer patientId) {

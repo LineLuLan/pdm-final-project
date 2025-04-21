@@ -26,6 +26,18 @@ public class DoctorService {
     }
 
     public int addDoctor(Doctor doctor) {
+        // Kiểm tra trùng licenseNumber
+        if (doctor.getLicenseNumber() != null && !doctor.getLicenseNumber().trim().isEmpty()) {
+            if (doctorRepository.findByLicenseNumber(doctor.getLicenseNumber()).isPresent()) {
+                throw new RuntimeException("Đã tồn tại bác sĩ với licenseNumber này!");
+            }
+        }
+        // Kiểm tra trùng email
+        if (doctor.getEmail() != null && !doctor.getEmail().trim().isEmpty()) {
+            if (doctorRepository.findByEmail(doctor.getEmail()).isPresent()) {
+                throw new RuntimeException("Đã tồn tại bác sĩ với email này!");
+            }
+        }
         return doctorRepository.save(doctor);
     }
 

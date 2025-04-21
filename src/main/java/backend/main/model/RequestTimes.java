@@ -10,9 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RequestTimes {
     // For repository compatibility
-    private Integer id;
-    private Integer times;
-    private java.time.LocalDate lastRequestDate;
 
     // Existing fields
     private Integer requestId;

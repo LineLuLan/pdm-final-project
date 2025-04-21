@@ -21,6 +21,11 @@ import backend.main.service.RequestTimesService;
 @RequestMapping("/requestTimes")
 public class RequestTimesController {
 
+    @GetMapping
+    public ResponseEntity<List<RequestTimes>> getAllRequestTimes() {
+        return ResponseEntity.ok(requestTimesService.getAllRequestTimes());
+    }
+
     private final RequestTimesService requestTimesService;
 
     @Autowired
@@ -37,12 +42,16 @@ public class RequestTimesController {
 
     // Add a new request time
     @PostMapping
-    public ResponseEntity<Void> addRequestTimes(@RequestBody RequestTimes requestTimes) {
+    public ResponseEntity<String> addRequestTimes(@RequestBody RequestTimes requestTimes) {
         int result = requestTimesService.addRequestTimes(requestTimes);
         if (result > 0) {
-            return ResponseEntity.status(HttpStatus.CREATED).build();
+            return ResponseEntity.status(HttpStatus.CREATED).body("Request created successfully.");
+        } else if (result == -1) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Insufficient blood stock to fulfill the request.");
+        } else if (result == -2) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Blood stock not found for the given ID.");
         } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to create request due to server error.");
         }
     }
 

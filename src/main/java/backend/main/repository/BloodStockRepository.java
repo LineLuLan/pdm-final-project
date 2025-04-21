@@ -13,4 +13,6 @@ public interface BloodStockRepository {
     int deleteById(Integer stockId);
     List<BloodStock> findByBloodType(String bloodType);
     List<BloodStock> findLowStock(Integer threshold);
+    int incrementQuantityByBid(Integer bid, Integer quantity);
+    int decrementQuantityByBid(Integer bid, Integer quantity);
 }

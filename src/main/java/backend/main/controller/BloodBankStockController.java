@@ -26,6 +26,11 @@ public class BloodBankStockController {
         this.bloodBankStockRepository = bloodBankStockRepository;
     }
 
+    @GetMapping
+    public List<BloodBankStock> getAllBloodBankStocks() {
+        return bloodBankStockRepository.findAll();
+    }
+
     @GetMapping("/{bloodBankId}")
     public List<BloodBankStock> getBloodBankStocksByBloodBankId(@PathVariable Integer bloodBankId) {
         return bloodBankStockRepository.findByBloodBankId(bloodBankId);

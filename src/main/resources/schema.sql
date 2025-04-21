@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS DonateTimes (
     Bid INT NOT NULL,
     DonorId INT NOT NULL,
     DonationDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    Quantity INT CHECK (Quantity BETWEEN 350 AND 500), -- Standard blood donation in mL
+    Quantity INT CHECK (Quantity BETWEEN 100 AND 500), -- Standard blood donation in mL
     Notes TEXT,
     FOREIGN KEY (Bid) REFERENCES BloodBank(Bid),
     FOREIGN KEY (DonorId) REFERENCES Donor(DonorId),
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS RequestTimes (
     PatientId INT,
     RequestDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     BloodType ENUM('A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-') NOT NULL,
-    Quantity INT NOT NULL CHECK (Quantity > 0),
+    Quantity INT NOT NULL CHECK (Quantity >= 100),
     Urgency ENUM('Low', 'Medium', 'High', 'Critical') DEFAULT 'Medium',
     Status ENUM('Pending', 'Approved', 'Fulfilled', 'Rejected') DEFAULT 'Pending',
     FOREIGN KEY (Did) REFERENCES Doctor(Did),

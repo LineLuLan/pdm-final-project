@@ -65,7 +65,7 @@ public class DonateTimesRepositoryImpl implements DonateTimesRepository {
 
     private DonateTimes mapRowToDonateTimes(ResultSet rs) throws SQLException {
         DonateTimes dt = new DonateTimes();
-        dt.setDonationId(rs.getInt("id"));
+        dt.setDonationId(rs.getInt("donationId"));
         dt.setBid(rs.getInt("bid"));
         dt.setDonorId(rs.getInt("donorId"));
         Timestamp ts = rs.getTimestamp("donationDate");

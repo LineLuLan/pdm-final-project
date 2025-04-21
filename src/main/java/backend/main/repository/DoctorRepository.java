@@ -12,4 +12,6 @@ public interface DoctorRepository {
     int update(Doctor doctor);
     int deleteById(Integer doctorId);
     List<Doctor> findBySpecialization(String specialization);
+    Optional<Doctor> findByLicenseNumber(String licenseNumber);
+    Optional<Doctor> findByEmail(String email);
 }

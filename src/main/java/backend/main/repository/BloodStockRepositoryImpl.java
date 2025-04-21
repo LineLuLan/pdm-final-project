@@ -12,6 +12,35 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class BloodStockRepositoryImpl implements BloodStockRepository {
+    @Override
+    public int incrementQuantityByBid(Integer bid, Integer quantity) {
+        String sql = "UPDATE BloodStock SET quantity = quantity + ? WHERE stockId = ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, quantity);
+            stmt.setInt(2, bid);
+            return stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
+    @Override
+    public int decrementQuantityByBid(Integer bid, Integer quantity) {
+        String sql = "UPDATE BloodStock SET quantity = quantity - ? WHERE stockId = ? AND quantity >= ?";
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, quantity);
+            stmt.setInt(2, bid);
+            stmt.setInt(3, quantity);
+            return stmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return 0;
+        }
+    }
+
     public Optional<BloodStock> findById(Integer id) {
         String sql = "SELECT * FROM BloodStock WHERE stockId = ?";
         try (Connection conn = DatabaseConfig.getConnection();
@@ -45,11 +74,24 @@ public class BloodStockRepositoryImpl implements BloodStockRepository {
 
     @Override
     public int save(BloodStock stock) {
-        String sql = "INSERT INTO BloodStock (stockId, bloodType, quantity, status, expirationDate, storageLocation) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO BloodStock (bloodType, quantity, status, expirationDate, storageLocation) VALUES (?, ?, ?, ?, ?)";
         try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            setBloodStockParameters(stmt, stock, false);
-            return stmt.executeUpdate();
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            // Set parameters for insert (bắt đầu từ 1)
+            stmt.setString(1, stock.getBloodType());
+            stmt.setInt(2, stock.getQuantity());
+            stmt.setString(3, stock.getStatus());
+            stmt.setDate(4, stock.getExpirationDate() != null ? Date.valueOf(stock.getExpirationDate()) : null);
+            stmt.setString(5, stock.getStorageLocation());
+            int affectedRows = stmt.executeUpdate();
+            if (affectedRows > 0) {
+                try (ResultSet generatedKeys = stmt.getGeneratedKeys()) {
+                    if (generatedKeys.next()) {
+                        stock.setStockId(generatedKeys.getInt(1));
+                    }
+                }
+            }
+            return affectedRows;
         } catch (SQLException e) {
             e.printStackTrace();
             return 0;
@@ -129,12 +171,14 @@ public class BloodStockRepositoryImpl implements BloodStockRepository {
         return stock;
     }
 
+    // Chỉ dùng cho update, KHÔNG dùng cho insert mới
     private void setBloodStockParameters(PreparedStatement stmt, BloodStock stock, boolean isUpdate) throws SQLException {
-        stmt.setInt(1, stock.getStockId());
-        stmt.setString(2, stock.getBloodType());
-        stmt.setInt(3, stock.getQuantity());
-        stmt.setString(4, stock.getStatus());
-        stmt.setDate(5, stock.getExpirationDate() != null ? Date.valueOf(stock.getExpirationDate()) : null);
-        stmt.setString(6, stock.getStorageLocation());
+        if (isUpdate) {
+            stmt.setString(1, stock.getBloodType());
+            stmt.setInt(2, stock.getQuantity());
+            stmt.setString(3, stock.getStatus());
+            stmt.setDate(4, stock.getExpirationDate() != null ? Date.valueOf(stock.getExpirationDate()) : null);
+            stmt.setString(5, stock.getStorageLocation());
+        }
     }
 }
